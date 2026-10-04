@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNMP トラフィックモニター</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        h1 {
+            font-size: 24px;
+            color: #2c3e50;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .filter-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 30px;
+            align-items: flex-end;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        label {
+            font-size: 13px;
+            font-weight: bold;
+            color: #4a5568;
+        }
+        select {
+            padding: 8px 12px;
+            font-size: 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            background-color: white;
+            min-width: 150px;
+            cursor: pointer;
+        }
+        select:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        .time-range {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .time-range select {
+            min-width: 80px;
+        }
+        .chart-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .chart-img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+        }
+        .no-data {
+            padding: 5px 0;
+            color: #e53e3e;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>SNMP トラフィックモニター</h1>
+
+    <!-- 条件選択フォーム -->
+    <form method="GET" action="/" class="filter-form">
+        
+        <!-- 1. 日付選択プルダウン -->
+        <div class="form-group">
+            <label for="dir">対象日付 (YYYYMM/DD)</label>
+            <select name="dir" id="dir" onchange="this.form.submit()">
+                {% for d in sub_directories %}
+                    <option value="{{ d }}" {% if d == selected_dir %}selected{% endif %}>{{ d }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- 2. 【新規追加】SWITCH選択プルダウン -->
+        <div class="form-group">
+            <label for="switch">対象スイッチ</label>
+            <select name="switch" id="switch" onchange="this.form.submit()">
+                {% if not switches %}
+                    <option value="">（選択可能なSWITCHなし）</option>
+                {% else %}
+                    {% for s in switches %}
+                        <option value="{{ s }}" {% if s == selected_switch %}selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                {% endif %}
+            </select>
+        </div>
+
+        <!-- 3. 表示時間帯（開始〜終了） -->
+        <div class="form-group">
+            <label>表示時間帯</label>
+            <div class="time-range">
+                <select name="start_hour" onchange="this.form.submit()">
+                    {% for h in range(0, 24) %}
+                        <option value="{{ h }}" {% if h == start_hour %}selected{% endif %}>{{ "%02d"|format(h) }}:00</option>
+                    {% endfor %}
+                </select>
+                <span>〜</span>
+                <select name="end_hour" onchange="this.form.submit()">
+                    {% for h in range(0, 24) %}
+                        <option value="{{ h }}" {% if h == end_hour %}selected{% endif %}>{{ "%02d"|format(h) }}:55</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+    </form>
+
+    <!-- 4. グラフ表示エリア -->
+    <div class="chart-container">
+        {% if plot_url %}
+            <img class="chart-img" src="data:image/png;base64,{{ plot_url }}" alt="時系列グラフ">
+        {% else %}
+            <p class="no-data">選択された条件のデータ、またはデータ内のSWITCHフォルダ（SWITCH_*）が見つかりません。</p>
+        {% endif %}
+    </div>
+</div>
+
+</body>
+</html>
