@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>SNMP トラフィックモニター</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: inline-block; width: 120px; font-weight: bold; }
+        select { padding: 5px; width: 150px; }
+        .btn-submit { padding: 6px 15px; font-size: 14px; cursor: pointer; }
+        .graph-container { margin-top: 20px; }
+        .error-msg { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>SNMP トラフィックモニター</h1>
+
+    <form method="GET" action="/">
+        <!-- 1. 対象月 (YYYYMM) の選択 -->
+        <div class="form-group">
+            <label for="yyyymm">対象月 (YYYYMM):</label>
+            <select name="yyyymm" id="yyyymm" onchange="updateDdOptions()">
+                {% for yyyymm in date_tree.keys() %}
+                    <option value="{{ yyyymm }}" {% if yyyymm == selected_yyyymm %}selected{% endif %}>{{ yyyymm }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- 2. 対象日 (DD) の選択 -->
+        <div class="form-group">
+            <label for="dd">対象日 (DD):</label>
+            <select name="dd" id="dd">
+                {% for dd in available_dds %}
+                    <option value="{{ dd }}" {% if dd == selected_dd %}selected{% endif %}>{{ dd }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- 3. 対象スイッチの選択 -->
+        <div class="form-group">
+            <label for="switch">対象スイッチ:</label>
+            {% if not switches %}
+                <select name="switch" disabled>
+                    <option>（選択可能なSWITCHなし）</option>
+                </select>
+            {% else %}
+                <select name="switch" id="switch">
+                    {% for s in switches %}
+                        <option value="{{ s }}" {% if s == selected_switch %}selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+            {% endif %}
+        </div>
+
+        <!-- 4. 表示時間帯の選択 -->
+        <div class="form-group">
+            <label>表示時間帯:</label>
+            <select name="start_hour">
+                {% for h in range(0, 24) %}
+                    <option value="{{ h }}" {% if h == start_hour %}selected{% endif %}>{{ "%02d"|format(h) }}:00</option>
+                {% endfor %}
+            </select>
+            〜
+            <select name="end_hour">
+                {% for h in range(0, 24) %}
+                    <option value="{{ h }}" {% if h == end_hour %}selected{% endif %}>{{ "%02d"|format(h) }}:55</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <button type="submit" class="btn-submit">条件を更新して表示</button>
+    </form>
+
+    <hr>
+
+    <!-- 5. グラフの表示エリア -->
+    <div class="graph-container">
+        {% if plot_url %}
+            <h3>時系列グラフ</h3>
+            <img src="data:image/png;base64,{{ plot_url }}" alt="時系列グラフ">
+        {% else %}
+            <p class="error-msg">選択された条件のデータ、またはデータ内のSWITCHフォルダ（SWITCH_*）が見つかりません。</p>
+        {% endif %}
+    </div>
+
+    <!-- 月選択が変更された時に、日の選択肢を動的に書き換えるJavaScript -->
+    <script>
+        // Pythonから渡された date_tree (辞書オブジェクト) を JavaScriptの連想配列として展開
+        const dateTree = {{ date_tree | tojson }};
+
+        function updateDdOptions() {
+            const yyyymmSelect = document.getElementById('yyyymm');
+            const ddSelect = document.getElementById('dd');
+            
+            // 現在選択されている月を取得
+            const selectedYyyymm = yyyymmSelect.value;
+            // その月に紐づく「日」のリストを取得
+            const dds = dateTree[selectedYyyYmm] || [];
+            
+            // 一度「日」のセレクトボックスを空にする
+            ddSelect.innerHTML = '';
+            
+            // 新しい「日」の選択肢を追加
+            dds.forEach(function(dd) {
+                const option = document.createElement('option');
+                option.value = dd;
+                option.textContent = dd;
+                ddSelect.appendChild(option);
+            });
+        }
+    </script>
+</body>
+</html>
