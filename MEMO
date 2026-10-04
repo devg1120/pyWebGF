@@ -1,3 +1,10 @@
+
+  319  pip install matplotlib
+  320  pip install pandas
+  320  pip install flask
+
+
+
 1. WSGIサーバー（Gunicorn / uWSGI）によるプロセスの定期再起動
 
 Flask標準のデバッグ用サーバー（app.run()）は本番環境での運用には向いていません。本番環境では Gunicorn などを使い、以下のように「一定数のリクエストを処理したらプロセスを自動で一度落としてリフレッシュする（--max-requests）」という設定を組み合わせるのが、Linuxサーバー運用における最も確実なメモリリーク対策のベストプラクティスです。
