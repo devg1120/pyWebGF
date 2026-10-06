@@ -6,24 +6,40 @@
     <style>
         body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
-            margin: 20px;
+            margin: 0; /* 💡 変更: 全体の余白をリセットし、固定ヘッダーを画面端に密着させる */
             background-color: #f5f7fa;
             color: #333;
+            /* 💡 追加: ヘッダー固定に伴い、スクロールバーのガタつきを防ぐ設定 */
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
+        
+        /* --- 💡 追加: 画面上部に固定されるヘッダー全体のラッパー --- */
+        .sticky-header-wrapper {
+            position: -webkit-sticky; /* Safari対応 */
+            position: sticky;
+            top: 0;
+            z-index: 1000; /* グラフカードよりも常に上に表示されるようにする */
+            background-color: #f5f7fa; /* 背景色と同化させてスクロール時の裏抜けを防ぐ */
+            padding: 20px 20px 5px 20px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); /* スクリロール時に境界が分かりやすくなる影 */
+        }
+
         h5 {
             font-size: 1.5rem;
-            margin-bottom: 20px;
+            margin: 0 0 15px 0; /* 💡 変更: 余白を調整 */
             color: #2c3e50;
         }
         .search-form {
             background-color: #fff;
-            padding: 20px;
+            padding: 15px 20px; /* 💡 変更: 少しコンパクトに */
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 10px; /* 💡 変更: 少しコンパクトに */
             display: inline-block;
             margin-right: 15px;
         }
@@ -47,6 +63,8 @@
             border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
+            vertical-align: bottom; /* 💡 追加: セレクトボックスと高さを揃える */
+            margin-bottom: 10px;
         }
         .btn-submit:hover {
             background-color: #2980b9;
@@ -55,10 +73,10 @@
         /* ファイル名絞り込み検索窓のスタイル */
         .filter-container {
             background-color: #fff;
-            padding: 15px 20px;
+            padding: 12px 20px; /* 💡 変更: 少しコンパクトに */
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            margin-bottom: 25px;
+            margin-bottom: 10px;
             border-left: 5px solid #2ecc71;
         }
         .filter-container label {
@@ -87,10 +105,16 @@
             color: #7f8c8d;
         }
         
+        /* --- 💡 変更: スクロールするコンテンツエリア（グラフ枠群）全体のラッパー --- */
+        .main-content {
+            padding: 10px 20px 20px 20px; /* 左右下の余白を確保 */
+            flex: 1;
+        }
+
         .graph-grid {
             display: grid;
             gap: 20px;
-            margin-top: 20px;
+            margin-top: 15px;
             grid-template-columns: repeat({{ selected_cols }}, minmax(0, 1fr));
         }
         
@@ -133,101 +157,107 @@
 </head>
 <body>
 
-    <h5>📊 SNMP トラフィックモニター (5分間隔差分)</h5>
+    <!-- 💡 追加: 画面最上部に固定させるためのラッパー要素を開始 -->
+    <div class="sticky-header-wrapper">
+        <h5>📊 SNMP トラフィックモニター (5分間隔差分)</h5>
 
-    <div class="search-form">
-        <form method="get" action="/">
-            <div class="form-group">
-                <label for="yyyymm">対象月</label>
-                <select name="yyyymm" id="yyyymm" onchange="this.form.submit()">
-                    {% for yyyymm in date_tree.keys() %}
-                        <option value="{{ yyyymm }}" {% if yyyymm == selected_yyyymm %}selected{% endif %}>
-                            {{ yyyymm[:4] }}年{{ yyyymm[4:] }}月
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="dd">対象日</label>
-                <select name="dd" id="dd" onchange="this.form.submit()">
-                    {% for dd in available_dds %}
-                        <option value="{{ dd }}" {% if dd == selected_dd %}selected{% endif %}>
-                            {{ dd }}日
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="switch">対象スイッチ</label>
-                <select name="switch" id="switch">
-                    {% for sw in switches %}
-                        <option value="{{ sw }}" {% if sw == selected_switch %}selected{% endif %}>
-                            {{ sw }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="start_hour">開始（時）</label>
-                <select name="start_hour" id="start_hour">
-                    {% for h in range(0, 24) %}
-                        <option value="{{ h }}" {% if h == start_hour %}selected{% endif %}>{{ h }} 時</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="end_hour">終了（時）</label>
-                <select name="end_hour" id="end_hour">
-                    {% for h in range(0, 24) %}
-                        <option value="{{ h }}" {% if h == end_hour %}selected{% endif %}>{{ h }} 時</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="cols">グラフ列数</label>
-                <select name="cols" id="cols">
-                    <option value="1" {% if selected_cols == 1 %}selected{% endif %}>1 列表示</option>
-                    <option value="2" {% if selected_cols == 2 %}selected{% endif %}>2 列表示 (標準)</option>
-                    <option value="4" {% if selected_cols == 4 %}selected{% endif %}>4 列並び</option>
-                </select>
-            </div>
-
-            <button type="submit" class="btn-submit">条件を更新</button>
-        </form>
-    </div>
-    <!-- 画面上のファイル名リアルタイム絞り込み検索窓 -->
-    {% if csv_filenames %}
-    <div class="filter-container">
-        <label for="csv-filter">🔍 グラフを絞り込み:</label>
-        <!-- プレースホルダーをワイルドカード対応の例に変更 -->
-        <input type="text" id="csv-filter" class="filter-input" placeholder="例: wan*, *eth0, gi*1">
-        <span class="filter-stats" id="filter-stats">表示中: {{ csv_filenames|length }} / {{ csv_filenames|length }} 件</span>
-    </div>
-    {% endif %}
-
-    <!-- グラフ表示エリア -->
-    {% if csv_filenames %}
-        <div class="graph-grid" id="graph-grid">
-            {% for filename in csv_filenames %}
-                <div class="graph-card" id="card-{{ loop.index }}" data-filename="{{ filename | lower }}">
-                    <div class="loading-shimmer" 
-                         data-filename="{{ filename }}"
-                         data-url="/plot?yyyymm={{ selected_yyyymm }}&dd={{ selected_dd }}&switch={{ selected_switch }}&filename={{ filename }}&cols={{ selected_cols }}&start_hour={{ start_hour }}&end_hour={{ end_hour }}">
-                         {{ filename }} を読み込み中...
-                    </div>
+        <!-- 検索条件選択フォーム -->
+        <div class="search-form">
+            <form method="get" action="/">
+                <div class="form-group">
+                    <label for="yyyymm">対象月</label>
+                    <select name="yyyymm" id="yyyymm" onchange="this.form.submit()">
+                        {% for yyyymm in date_tree.keys() %}
+                            <option value="{{ yyyymm }}" {% if yyyymm == selected_yyyymm %}selected{% endif %}>
+                                {{ yyyymm[:4] }}年{{ yyyymm[4:] }}月
+                            </option>
+                        {% endfor %}
+                    </select>
                 </div>
-            {% endfor %}
+
+                <div class="form-group">
+                    <label for="dd">対象日</label>
+                    <select name="dd" id="dd" onchange="this.form.submit()">
+                        {% for dd in available_dds %}
+                            <option value="{{ dd }}" {% if dd == selected_dd %}selected{% endif %}>
+                                {{ dd }}日
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="switch">対象スイッチ</label>
+                    <select name="switch" id="switch">
+                        {% for sw in switches %}
+                            <option value="{{ sw }}" {% if sw == selected_switch %}selected{% endif %}>
+                                {{ sw }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="start_hour">開始（時）</label>
+                    <select name="start_hour" id="start_hour">
+                        {% for h in range(0, 24) %}
+                            <option value="{{ h }}" {% if h == start_hour %}selected{% endif %}>{{ h }} 時</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="end_hour">終了（時）</label>
+                    <select name="end_hour" id="end_hour">
+                        {% for h in range(0, 24) %}
+                            <option value="{{ h }}" {% if h == end_hour %}selected{% endif %}>{{ h }} 時</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="cols">グラフ列数</label>
+                    <select name="cols" id="cols">
+                        <option value="1" {% if selected_cols == 1 %}selected{% endif %}>1 列表示</option>
+                        <option value="2" {% if selected_cols == 2 %}selected{% endif %}>2 列表示 (標準)</option>
+                        <option value="4" {% if selected_cols == 4 %}selected{% endif %}>4 列並び</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-submit">条件を更新</button>
+            </form>
         </div>
-    {% else %}
-        <div class="error-msg">
-            選択された条件（{{ selected_yyyymm }}/{{ selected_dd }} - {{ selected_switch or 'スイッチなし' }}）のディレクトリ内にCSVファイルが見つかりません。
+        <!-- 画面上のファイル名リアルタイム絞り込み検索窓 -->
+        {% if csv_filenames %}
+        <div class="filter-container">
+            <label for="csv-filter">🔍 グラフを絞り込み:</label>
+            <input type="text" id="csv-filter" class="filter-input" placeholder="例: wan*, *eth0, gi*1">
+            <span class="filter-stats" id="filter-stats">表示中: {{ csv_filenames|length }} / {{ csv_filenames|length }} 件</span>
         </div>
-    {% endif %}
+        {% endif %}
+    </div> <!-- 💡 変更: 画面最上部に固定させるためのラッパー要素 (.sticky-header-wrapper) をここで閉じる -->
+
+    <!-- 💡 追加: スクロールするメインコンテンツエリア（グラフ枠群）を開始 -->
+    <div class="main-content">
+        <!-- グラフ表示エリア -->
+        {% if csv_filenames %}
+            <div class="graph-grid" id="graph-grid">
+                {% for filename in csv_filenames %}
+                    <div class="graph-card" id="card-{{ loop.index }}" data-filename="{{ filename | lower }}">
+                        <div class="loading-shimmer" 
+                             data-filename="{{ filename }}"
+                             data-url="/plot?yyyymm={{ selected_yyyymm }}&dd={{ selected_dd }}&switch={{ selected_switch }}&filename={{ filename }}&cols={{ selected_cols }}&start_hour={{ start_hour }}&end_hour={{ end_hour }}">
+                             {{ filename }} を読み込み中...
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="error-msg">
+                選択された条件（{{ selected_yyyymm }}/{{ selected_dd }} - {{ selected_switch or 'スイッチなし' }}）のディレクトリ内にCSVファイルが見つかりません。
+            </div>
+        {% endif %}
+    </div> <!-- 💡 追加: .main-content をここで閉じる -->
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
@@ -258,32 +288,24 @@
                 img.src = targetUrl;
             });
 
-            // 2. 💡 変更: ワイルドカード(*)対応のリアルタイムフィルター処理
+            // 2. ワイルドカード(*)対応のリアルタイムフィルター処理
             if (filterInput) {
                 filterInput.addEventListener('input', function(e) {
                     const rawInput = e.target.value.toLowerCase().trim();
                     let visibleCount = 0;
 
                     if (rawInput === "") {
-                        // 検索窓が空の場合はすべて表示
                         graphCards.forEach(function(card) {
                             card.style.display = 'flex';
                             visibleCount++;
                         });
                     } else {
-                        // 1. エスケープ処理（* 以外の正規表現特殊文字を無効化）
                         let escapedInput = rawInput.replace(/[-\/\\^\$+?.()|[\]{}]/g, '\\$&');
-                        
-                        // 2. アスタリスク(*)を正規表現の「任意の文字列( .* )」に置換
-                        // 頭とお尻に自動マッチングがかかるようパターンを調整
                         let regexPattern = escapedInput.replace(/\*/g, '.*');
                         
-                        // 入力値自体にアスタリスクが含まれていない場合は通常の部分一致(含む)にするため、
-                        // 正規表現パターンを前後にワイルドカードがあるものとして扱う
                         if (!rawInput.includes('*')) {
                             regexPattern = '.*' + regexPattern + '.*';
                         } else {
-                            // アスタリスクが明示されている場合は、完全一致ベース（^と\$）で制御できるようにする
                             regexPattern = '^' + regexPattern + '\$';
                         }
 
@@ -293,7 +315,6 @@
                             graphCards.forEach(function(card) {
                                 const filename = card.getAttribute('data-filename');
                                 
-                                // 正規表現パターンにマッチするか判定
                                 if (regex.test(filename)) {
                                     card.style.display = 'flex';
                                     visibleCount++;
@@ -302,12 +323,10 @@
                                 }
                             });
                         } catch (e) {
-                            // 万が一正規表現のパースエラーが起きた場合はフォールバック
                             console.error("Invalid regex filter pattern", e);
                         }
                     }
 
-                    // 画面右側のステータスをリアルタイム更新
                     if (filterStats) {
                         filterStats.textContent = `表示中: ${visibleCount} / ${totalCount} 件`;
                     }
