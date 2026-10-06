@@ -13,6 +13,31 @@ from matplotlib.figure import Figure
 import matplotlib.dates as mdates  
 from flask import Flask, render_template, request, send_file
 
+#custom_style = {
+#    'figure.facecolor': '#000033',      # グラフ領域の背景色（紺色）
+#    'axes.facecolor': '#000033',        # グラフの背景色（紺色）
+#    'axes.edgecolor': '#00aaff',        # グラフの枠線の色（紺色）
+#    'axes.labelcolor': '#00aaff',       # 軸ラベルの色（紺色）
+#    'text.color': 'white',            # テキストの色（紺色）
+#    'xtick.color': '#00aaff',           # x軸目盛りの色（紺色）
+#    'ytick.color': '#00aaff',           # y軸目盛りの色（紺色）
+#    'lines.color': '#00aaff',           # ラインの色（紺色）
+#    'patch.edgecolor': '#000033',       # グラフ領域の境界線の色（紺色）
+#    'grid.color': '#003366',            # グリッド線の色（濃い紺色）
+#    'grid.linestyle': '--',              # グリッド線のスタイル（実線）
+#    'grid.alpha': 0.4,                  # グリッド線の透明度
+#    'legend.edgecolor': '#00aaff',      # 凡例の境界線の色（紺色）
+#    'legend.facecolor': '#001f3f',      # 凡例の背景色（紺色）
+#    'legend.framealpha': 0.5,           # 凡例の背景色の透明度
+#}
+
+#plt.style.use(custom_style)
+
+#plt.style.use('seaborn-v0_8-whitegrid')
+#plt.style.use('ggplot')
+#plt.style.use('dark_background')
+#plt.style.use('fivethirtyeight')
+
 # --- OS自動判定による日本語文字化け対策 ---
 current_os = platform.system()
 
@@ -108,6 +133,13 @@ def plot_graph():
     file_path = os.path.join(BASE_DIR, yyyymm, dd, switch, filename)
     
     if cols == 1:
+        fig_size = (14, 5.0)
+    elif cols == 4:
+        fig_size = (6, 4.5)
+    else:
+        fig_size = (8, 4.8)
+        
+    if cols == 1:
         fig_size = (14, 4.0)
     elif cols == 4:
         fig_size = (6, 2.8)
@@ -117,6 +149,59 @@ def plot_graph():
     fig = Figure(figsize=fig_size)
     ax = fig.subplots()
     
+    """
+    try:
+        df = pd.read_csv(file_path, engine='c')
+        if len(df.columns) >= 3:
+            df.columns = ['日時', '項目A', '項目B']
+        df['日時'] = pd.to_datetime(df['日時'], format='mixed')
+        
+        df['差分A'] = df['項目A'].diff()
+        df['差分B'] = df['項目B'].diff()
+        df.loc[df['差分A'] < 0, '差分A'] = 0
+        df.loc[df['差分B'] < 0, '差分B'] = 0
+        
+        df['bps_A'] = (df['差分A'] * 8) / 300
+        df['bps_B'] = (df['差分B'] * 8) / 300
+        
+        base_date = df['日時'].iloc[0].normalize() 
+        start_time = base_date + pd.Timedelta(hours=start_hour)
+        end_time = base_date + pd.Timedelta(hours=end_hour, minutes=55)
+        
+        df_filtered = df[(df['日時'] >= start_time) & (df['日時'] <= end_time)]
+        
+        ax.plot(df_filtered['日時'], df_filtered['bps_A'], color='b', label='In (bps)', linewidth=1)
+        ax.plot(df_filtered['日時'], df_filtered['bps_B'], color='orange', label='Out (bps)', linewidth=1)
+        
+        ax.set_xlim(start_time, end_time)
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+        ax.tick_params(labelbottom=True) 
+        for label in ax.get_xticklabels():
+            label.set_rotation(30)
+            label.set_horizontalalignment('right')
+        
+        ax.get_yaxis().get_major_formatter().set_scientific(False)
+        
+        max_val = max(df_filtered['bps_A'].max(), df_filtered['bps_B'].max()) if not df_filtered.empty else 0
+        if max_val >= 1_000_000:
+            ax.get_yaxis().set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, p: f'{x/1_000_000:,.1f} M'))
+            ax.set_ylabel('転送速度 (Mbps)')
+        elif max_val >= 1_000:
+            ax.get_yaxis().set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, p: f'{x/1_000:,.0f} K'))
+            ax.set_ylabel('転送速度 (Kbps)')
+        else:
+            ax.get_yaxis().set_major_formatter(matplotlib.ticker.StrMethodFormatter('{x:,.0f}'))
+            ax.set_ylabel('転送速度 (bps)')
+        
+        ax.set_title(f'{filename} トラフィック（速度）')
+        ax.set_xlabel('時間')
+        ax.grid(True, linestyle='--', alpha=0.6)
+        ax.legend(loc='best')
+        
+    except Exception as e:
+        ax.text(0.5, 0.5, f'エラー:\n{str(e)}', ha='center', va='center')
+        ax.set_title(f'{filename} (読込失敗)')
+    """
     try:
         df = pd.read_csv(file_path, engine='c')
         if len(df.columns) >= 3:
@@ -182,18 +267,18 @@ def plot_graph():
             ax.get_yaxis().set_major_formatter(matplotlib.ticker.StrMethodFormatter('{x:,.0f}'))
             ax.set_ylabel('転送速度 (bps)', color='#000000')
         
-        # ✨ 【変更】タイトルに対象スイッチ名とファイル名を表示（黒文字・左寄せ）
-        ax.set_title(f'【{switch}】{filename}', color='#000000', fontsize=11, fontweight='bold', loc='left')
+        # タイトルと軸ラベルの設定（黒文字・左寄せ）
+        ax.set_title(f'{filename} トラフィック（速度）', color='#000000', fontsize=11, fontweight='bold', loc='left')
+        ax.set_xlabel('時間', color='#000000')
         
-        # ✨ 【変更】X軸見出しに YYYYMM/DD を表示
-        ax.set_xlabel(f'{yyyymm}/{dd}', color='#000000')
-        
-        # 凡例をMRTG風に配置
+        # 凡例をMRTG風にグラフの下側（中央）へ水平に配置
+        #ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.22), ncol=2, frameon=True, facecolor='#ffffff', edgecolor='#cccccc')
         ax.legend(loc='upper left', bbox_to_anchor=(0.6, 1.20), ncol=2, frameon=True, facecolor='#ffffff', edgecolor='#cccccc')
         
     except Exception as e:
         ax.text(0.5, 0.5, f'エラー:\n{str(e)}', ha='center', va='center')
         ax.set_title(f'{filename} (読込失敗)')
+
 
     fig.tight_layout()
     img = io.BytesIO()
@@ -201,6 +286,7 @@ def plot_graph():
     img.seek(0)
     fig.clear()
     
+    # 💡 拡張子をPNG画像としてそのままブラウザへ直接レスポンス（Base64変換不要）
     return send_file(img, mimetype='image/png')
 
 if __name__ == '__main__':
