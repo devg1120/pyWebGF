@@ -332,7 +332,9 @@
                     {% for filename in csv_filenames %}
                         <!-- スクロール移動先となる id を付与。カード上部にもファイル名タイトルを表示 -->
                         <div class="graph-card" id="graph-anchor-{{ loop.index }}" data-filename="{{ filename | lower }}">
+<!--
                             <div class="graph-title">📄 {{ filename }}</div>
+-->
                             <div class="loading-shimmer" 
                                  data-filename="{{ filename }}"
                                  data-url="/plot?yyyymm={{ selected_yyyymm }}&dd={{ selected_dd }}&switch={{ selected_switch }}&filename={{ filename }}&cols={{ selected_cols }}&start_hour={{ start_hour }}&end_hour={{ end_hour }}">
