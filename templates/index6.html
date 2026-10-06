@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNMP トラフィックモニター</title>
+    <!-- 画面をきれいに整えるための軽量なCSSフレームワーク -->
+    <link rel="stylesheet" href="https://cloudflare.com">
+    
+    <style>
+        /* 画面全体を固定し、余計なスクロールバーを出さない */
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background-color: #f8f9fa;
+        }
+
+        /* 上部ヘッダーと下部コンテンツを縦に並べるコンテナ */
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        /* ヘッダー部分：中身に合わせて高さを自動決定し、上部に固定 */
+        .fixed-header {
+            flex-shrink: 0;
+            background-color: #ffffff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            padding: 15px 20px;
+            z-index: 1000;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        /* グラフエリア：ヘッダーの真下から始まり、独立して縦スクロール */
+        .main-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 25px;
+        }
+
+        /* フォームのパーツをきれいに横並びにするスタイル */
+        .filter-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: flex-end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 4px;
+        }
+
+        .graph-container {
+            background-color: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+
+        .graph-img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+
+    <!-- 1. 動的追従・上部固定ヘッダー（絶対にグラフと重ならない） -->
+    <div class="fixed-header">
+        <h5 class="mb-3 text-dark font-weight-bold">📊 SNMP トラフィックモニター (5分間隔差分)</h5>
+        
+        <form method="GET" action="/" class="filter-form">
+            
+            <!-- 対象月 (YYYYMM) -->
+            <div class="form-group">
+                <label for="yyyymm">対象月</label>
+                <select name="yyyymm" id="yyyymm" class="form-select form-select-sm" onchange="this.form.submit()">
+                    {% for yyyymm in date_tree.keys() %}
+                    <option value="{{ yyyymm }}" {% if yyyymm == selected_yyyymm %}selected{% endif %}>{{ yyyymm[:4] }}年{{ yyyymm[4:] }}月</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- 対象日 (DD) -->
+            <div class="form-group">
+                <label for="dd">対象日</label>
+                <select name="dd" id="dd" class="form-select form-select-sm" onchange="this.form.submit()">
+                    {% for dd in available_dds %}
+                    <option value="{{ dd }}" {% if dd == selected_dd %}selected{% endif %}>{{ dd }}日</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- 対象スイッチ (SWITCH_#) -->
+            <div class="form-group">
+                <label for="switch">対象スイッチ</label>
+                <select name="switch" id="switch" class="form-select form-select-sm">
+                    {% for sw in switches %}
+                    <option value="{{ sw }}" {% if sw == selected_switch %}selected{% endif %}>{{ sw }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- 開始時間 (Hour) -->
+            <div class="form-group">
+                <label for="start_hour">開始（時）</label>
+                <select name="start_hour" id="start_hour" class="form-select form-select-sm">
+                    {% for h in range(0, 24) %}
+                    <option value="{{ h }}" {% if h == start_hour %}selected{% endif %}>{{ h }} 時</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- 終了時間 (Hour) -->
+            <div class="form-group">
+                <label for="end_hour">終了（時）</label>
+                <select name="end_hour" id="end_hour" class="form-select form-select-sm">
+                    {% for h in range(0, 24) %}
+                    <option value="{{ h }}" {% if h == end_hour %}selected{% endif %}>{{ h }} 時</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- [追加] グラフ列数の選択 -->
+            <div class="form-group">
+                <label for="cols">グラフ列数</label>
+                <select name="cols" id="cols" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="1" {% if selected_cols == 1 %}selected{% endif %}>1 列表示</option>
+                    <option value="2" {% if selected_cols == 2 %}selected{% endif %}>2 列表示 (標準)</option>
+                    <option value="4" {% if selected_cols == 4 %}selected{% endif %}>4 列並び</option>
+                </select>
+            </div>
+
+            <!-- 更新ボタン -->
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary btn-sm px-3">条件を更新</button>
+            </div>
+            
+        </form>
+    </div>
+
+    <!-- 2. 独立スクロールするメインエリア（グラフ表示） -->
+    <div class="main-content">
+        <div class="container-fluid p-0">
+            {% if plot_url %}
+                <div class="graph-container">
+                    <img src="data:image/png;base64,{{ plot_url }}" alt="時系列トラフィックグラフ" class="graph-img">
+                </div>
+            {% else %}
+                <div class="alert alert-warning role="alert"">
+                    選択された条件（{{ selected_yyyymm }}/{{ selected_dd }} - {{ selected_switch or 'スイッチなし' }}）のデータ、またはCSVファイルが見つかりません。
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>
