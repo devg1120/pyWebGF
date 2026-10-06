@@ -189,7 +189,8 @@ def plot_graph():
         ax.set_xlabel(f'{yyyymm}/{dd}', color='#000000')
         
         # 凡例をMRTG風に配置
-        ax.legend(loc='upper left', bbox_to_anchor=(0.6, 1.20), ncol=2, frameon=True, facecolor='#ffffff', edgecolor='#cccccc')
+        #ax.legend(loc='upper left', bbox_to_anchor=(0.6, 1.20), ncol=2, frameon=True, facecolor='#ffffff', edgecolor='#cccccc')
+        ax.legend(loc='upper left',  ncol=2, frameon=True, facecolor='#ffffff', edgecolor='#cccccc')
         
     except Exception as e:
         ax.text(0.5, 0.5, f'エラー:\n{str(e)}', ha='center', va='center')
