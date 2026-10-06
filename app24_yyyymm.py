@@ -79,7 +79,7 @@ def index():
         csv_filenames = [os.path.basename(f) for f in csv_files]
 
     return render_template(
-        'index23.html', 
+        'index24.html', 
         date_tree=date_tree, 
         selected_yyyymm=selected_yyyymm,
         selected_dd=selected_dd,

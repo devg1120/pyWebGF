@@ -6,7 +6,10 @@
 #python3  ./app13_yyyymm.py
 #python3  ./app14_yyyymm.py
 #python3  ./app15_yyyymm.py
-#python3  ./app16_yyyymm.py
-#python3  ./app20_yyyymm.py
-python3  ./app22_yyyymm.py
+#python  ./app16_yyyymm.py
+#python  ./app20_yyyymm.py
+#python  ./app21_yyyymm.py
+#python  ./app22_yyyymm.py
+#python  ./app23_yyyymm.py
+python  ./app24_yyyymm.py
 
