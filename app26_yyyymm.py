@@ -142,6 +142,7 @@ def plot_graph():
     fig = Figure(figsize=fig_size)
     ax = fig.subplots()
     
+    """
     try:
         df = pd.read_csv(file_path, engine='c')
         if len(df.columns) >= 3:
@@ -193,7 +194,84 @@ def plot_graph():
     except Exception as e:
         ax.text(0.5, 0.5, f'エラー:\n{str(e)}', ha='center', va='center')
         ax.set_title(f'{filename} (読込失敗)')
-    
+    """
+    try:
+        df = pd.read_csv(file_path, engine='c')
+        if len(df.columns) >= 3:
+            df.columns = ['日時', '項目A', '項目B']
+        df['日時'] = pd.to_datetime(df['日時'], format='mixed')
+        
+        df['差分A'] = df['項目A'].diff()
+        df['差分B'] = df['項目B'].diff()
+        df.loc[df['差分A'] < 0, '差分A'] = 0
+        df.loc[df['差分B'] < 0, '差分B'] = 0
+        
+        df['bps_A'] = (df['差分A'] * 8) / 300
+        df['bps_B'] = (df['差分B'] * 8) / 300
+        
+        base_date = df['日時'].iloc[0].normalize() 
+        start_time = base_date + pd.Timedelta(hours=start_hour)
+        end_time = base_date + pd.Timedelta(hours=end_hour, minutes=55)
+        
+        df_filtered = df[(df['日時'] >= start_time) & (df['日時'] <= end_time)]
+
+        # =================================================================
+        # 🎨 MRTG Like スタイルの適用箇所
+        # =================================================================
+        # グラフの外側をMRTG特有の薄いグレーに、内部（プロット領域）を白に設定
+        fig.set_facecolor('#f0f0f0')
+        ax.set_facecolor('#ffffff')
+
+        if not df_filtered.empty:
+            # 🟢 項目A (Inbound): 鮮やかな黄緑色 (#00eb0c) で塗りつぶし ＋ 濃い緑の縁取り
+            ax.fill_between(df_filtered['日時'], df_filtered['bps_A'], color='#00eb0c', alpha=0.9, label='In (bps)')
+            ax.plot(df_filtered['日時'], df_filtered['bps_A'], color='#006600', linewidth=0.8)
+            
+            # 🔵 項目B (Outbound): 鮮やかな青色 (#1000ff) の太線
+            ax.plot(df_filtered['日時'], df_filtered['bps_B'], color='#1000ff', linewidth=1.8, label='Out (bps)')
+
+        # MRTG風の細い実線グリッド（灰色）をグラフの下層に敷く
+        ax.grid(True, which='both', color='#cccccc', linestyle='-', linewidth=0.5)
+        ax.set_axisbelow(True)
+
+        # グラフの外枠（四辺）を黒の細線で強調する
+        for spine in ax.spines.values():
+            spine.set_color('#000000')
+            spine.set_linewidth(0.3)
+        # =================================================================
+
+        ax.set_xlim(start_time, end_time)
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+        ax.tick_params(labelbottom=True, colors='#000000') # 目盛りテキストを黒に固定
+        for label in ax.get_xticklabels():
+            label.set_rotation(30)
+            label.set_horizontalalignment('right')
+        
+        ax.get_yaxis().get_major_formatter().set_scientific(False)
+        
+        max_val = max(df_filtered['bps_A'].max(), df_filtered['bps_B'].max()) if not df_filtered.empty else 0
+        if max_val >= 1_000_000:
+            ax.get_yaxis().set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, p: f'{x/1_000_000:,.1f} M'))
+            ax.set_ylabel('転送速度 (Mbps)', color='#000000')
+        elif max_val >= 1_000:
+            ax.get_yaxis().set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, p: f'{x/1_000:,.0f} K'))
+            ax.set_ylabel('転送速度 (Kbps)', color='#000000')
+        else:
+            ax.get_yaxis().set_major_formatter(matplotlib.ticker.StrMethodFormatter('{x:,.0f}'))
+            ax.set_ylabel('転送速度 (bps)', color='#000000')
+        
+        # タイトルと軸ラベルの設定（黒文字・左寄せ）
+        ax.set_title(f'{filename} トラフィック（速度）', color='#000000', fontsize=11, fontweight='bold', loc='left')
+        ax.set_xlabel('時間', color='#000000')
+        
+        # 凡例をMRTG風にグラフの下側（中央）へ水平に配置
+        ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.22), ncol=2, frameon=True, facecolor='#ffffff', edgecolor='#cccccc')
+        
+    except Exception as e:
+        ax.text(0.5, 0.5, f'エラー:\n{str(e)}', ha='center', va='center')
+        ax.set_title(f'{filename} (読込失敗)')
+
+
     fig.tight_layout()
     img = io.BytesIO()
     fig.savefig(img, format='png', bbox_inches='tight', dpi=120)
