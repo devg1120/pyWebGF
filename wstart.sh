@@ -11,5 +11,6 @@
 #python  ./app21_yyyymm.py
 #python  ./app22_yyyymm.py
 #python  ./app23_yyyymm.py
-python  ./app24_yyyymm.py
+#python  ./app24_yyyymm.py
+python  ./app25_yyyymm.py
 
