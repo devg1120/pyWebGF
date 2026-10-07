@@ -3,6 +3,11 @@
   320  pip install pandas
   320  pip install flask
 
+pip install ruff
+ruff format .
+
+pip install djhtml
+djhtml index.html
 
 
 1. WSGIサーバー（Gunicorn / uWSGI）によるプロセスの定期再起動

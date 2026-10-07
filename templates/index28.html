@@ -358,13 +358,13 @@
         {% set ns.is_registered = true %}
     {% endif %}
 {% endfor %}
-<!--
-    <div style="position: absolute; top: 15px; right: 15px; z-index: 10; margin: 0;">
+
+    <div style="position: absolute; bottom: 10px; right: 26px; z-index: 10; margin: 0;">
                 {# 2. 登録済みの場合は、ボタンの見た目を「登録済み」にして無効化（disabled）します #}
                 {% if ns.is_registered %}
                     <button type="button" class="btn btn-success" disabled 
-                            style="background-color: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: not-allowed; font-weight: bold;">
-                        ✅ ダッシュボードに登録済み
+                            style="background-color: #0066cc; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: not-allowed;  font-size: 10px; font-weight: bold;box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: all 0.2s;">
+                        登録中
                     </button>
                 {% else %}
         <button type="button" 
@@ -373,12 +373,12 @@
                 data-dd="{{ selected_dd }}"
                 data-switch="{{ selected_switch }}"
                 data-filename="{{ filename }}"
-                style="background-color: #28a745; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: all 0.2s;">
-            ＋ ダッシュボードに追加
+                style="background-color: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: all 0.2s;">
+            ＋ ダッシュボード登録
         </button>
               {% endif %}
     </div>
--->
+
     <!-- 既存のグラフ読み込み要素（imgタグなどのエリア） -->
     <!-- ※もし既存のJavaScript等でimgを生成している場合は、そのままで大丈夫です -->
                         <div class="graph-card" id="graph-anchor-{{ loop.index }}" data-filename="{{ filename | lower }}">

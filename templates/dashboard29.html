@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>トラフィック監視ダッシュボード</title>
+    <style>
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ddd; padding-bottom: 15px; margin-bottom: 20px; }
+        .title { margin: 0; font-size: 1.5em; color: #222; }
+        .nav-link { text-decoration: none; font-weight: bold; color: #007bff; }
+        .nav-link:hover { text-decoration: underline; }
+        
+        /* 検索・切り替えコントロールエリア */
+        .control-panel { background: #fff; padding: 15px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .control-form { display: flex; flex-wrap: wrap; gap: 15px; align-items: center; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+        .form-group label { font-size: 0.85em; font-weight: bold; color: #666; }
+        .form-control { padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9em; background-color: #fff; }
+        .btn-submit { background-color: #007bff; color: white; border: none; padding: 7px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: auto; }
+        .btn-submit:hover { background-color: #0056b3; }
+
+        /* グラフ表示グリッド構造 */
+        .graph-grid { display: grid; gap: 20px; }
+        .grid-1 { grid-template-columns: 1fr; }
+        .grid-2 { grid-template-columns: repeat(2, 1fr); }
+        .grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+        .graph-card { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); position: relative; }
+        .delete-btn-area { margin-bottom: 10px; text-align: right; }
+        .btn-delete { background-color: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; cursor: pointer; }
+        .btn-delete:hover { background-color: #bd2130; }
+        .graph-img { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+        .empty-message { text-align: center; padding: 5px; color: #777; background: #fff; border: 1px solid #ddd; border-radius: 6px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1 class="title">📋 登録済みトラフィックモニター</h1>
+        <!-- メインに戻る際にも現在のダッシュボードの選択状態を引き継ぐ -->
+        <a class="nav-link" href="/?yyyymm={{ selected_yyyymm }}&dd={{ selected_dd }}&cols={{ selected_cols }}&start_hour={{ start_hour }}&end_hour={{ end_hour }}">⬅ メイン画面に戻る</a>
+    </div>
+
+    <!-- 📊 対象月・対象日・表示範囲の一括切り替えパネル -->
+    <div class="control-panel">
+        <form method="GET" action="/dashboard" class="control-form" id="search-form">
+            <div class="form-group">
+                <label for="yyyymm">対象月</label>
+                <select name="yyyymm" id="yyyymm" class="form-control">
+                    {% for yyyymm in date_tree.keys() %}
+                        <option value="{{ yyyymm }}" {% if yyyymm == selected_yyyymm %}selected{% endif %}>{{ yyyymm }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="dd">対象日</label>
+                <select name="dd" id="dd" class="form-control">
+                    {% for dd in available_dds %}
+                        <option value="{{ dd }}" {% if dd == selected_dd %}selected{% endif %}>{{ dd }}日</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+
+            <div class="form-group">
+                <label for="start_hour">開始時間 (時)</label>
+                <select name="start_hour" id="start_hour" class="form-control">
+                    {% for h in range(0, 24) %}
+                        <option value="{{ h }}" {% if h == start_hour %}selected{% endif %}>{{ h }}:00</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="end_hour">終了時間 (時)</label>
+                <select name="end_hour" id="end_hour" class="form-control">
+                    {% for h in range(0, 24) %}
+                        <option value="{{ h }}" {% if h == end_hour %}selected{% endif %}>{{ h }}:00</option>
+                    {% endfor %}
+                </select>
+            </div>
+	     &nbsp;
+	     &nbsp;
+
+            <div class="form-group">
+                <label for="cols">表示列数</label>
+                <select name="cols" id="cols" class="form-control">
+                    <option value="1" {% if selected_cols == 1 %}selected{% endif %}>1列</option>
+                    <option value="2" {% if selected_cols == 2 %}selected{% endif %}>2列</option>
+                    <option value="4" {% if selected_cols == 4 %}selected{% endif %}>4列</option>
+                </select>
+            </div>
+	     &nbsp;
+	     &nbsp;
+	     &nbsp;
+            <button type="submit" class="btn-submit">一括更新</button>
+        </form>
+    </div>
+
+    <!-- 📈 グラフ表示エリア -->
+    {% if registry %}
+        <div class="graph-grid grid-{{ selected_cols }}">
+            {% for item in registry %}
+                <div class="graph-card">
+                    <!-- ダッシュボードからの削除ボタン -->
+                    <div class="delete-btn-area">
+                        <form action="/dashboard/delete" method="POST" style="display: inline;" onsubmit="return confirm('このグラフをダッシュボードから削除しますか？');">
+                            <input type="hidden" name="index" value="{{ loop.index0 }}">
+                            <button type="submit" class="btn-delete">❌ 削除</button>
+                        </form>
+                    </div>
+                    
+                    <!-- 💡 ここがパターンAの肝：item.yyyymm ではなく、上のコントロールで選択した selected_yyyymm / selected_dd を使ってオンデマンド描画する -->
+                    <img class="graph-img" 
+                         src="/plot?yyyymm={{ selected_yyyymm }}&dd={{ selected_dd }}&switch={{ item.switch }}&filename={{ item.filename }}&cols={{ selected_cols }}&start_hour={{ start_hour }}&end_hour={{ end_hour }}" 
+                         alt="{{ item.filename }}">
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-message">
+            <p>ダッシュボードに登録されたグラフはまだありません。メイン画面から「＋ ダッシュボードに追加」を押して登録してください。</p>
+        </div>
+    {% endif %}
+
+    <!-- 🔄 月選択時に日の選択肢を動的に書き換えるJavaScript処理 -->
+    <script>
+        const dateTree = {{ date_tree | tojson }};
+        const yyyymmSelect = document.getElementById('yyyymm');
+        const ddSelect = document.getElementById('dd');
+
+        yyyymmSelect.addEventListener('change', function() {
+            const selectedMonth = this.value;
+            const days = dateTree[selectedMonth] || [];
+            
+            // 日のセレクトボックスを初期化
+            ddSelect.innerHTML = '';
+            
+            // 新しい日付の選択肢を追加
+            days.forEach(function(day) {
+                const option = document.createElement('option');
+                option.value = day;
+                option.textContent = day + '日';
+                ddSelect.appendChild(option);
+            });
+        });
+    </script>
+</body>
+</html>
