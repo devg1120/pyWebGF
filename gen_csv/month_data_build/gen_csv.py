@@ -58,13 +58,6 @@ def make_day_data(YYYY,MM,DD,SWITCH ,DIR, PORT):
    
    # データフレームの作成
    
-   # --- 修正前（レート値のまま） ---
-   # df = pd.DataFrame({
-   #     "timestamp": dr,
-   #     "ifInOctets_rate": bytes_in,
-   #     "ifOutOctets_rate": bytes_out
-   # })
-   
    # --- 修正後：5分間（300秒）の合計トラフィックを算出して累積和（cumsum）をとる ---
    # 1秒あたりのバイト数(レート)を5分間(300秒)の総バイト数に変換してから積み上げます
    
