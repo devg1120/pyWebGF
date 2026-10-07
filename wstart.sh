@@ -13,5 +13,7 @@
 #python  ./app23_yyyymm.py
 #python  ./app24_yyyymm.py
 #python  ./app25_yyyymm.py
-python  ./app26_yyyymm.py
+python  ./app26_yyyymm.py  # no dush
+#python  ./app27_yyyymm.py
+#python  ./app28_yyyymm.py  # dush
 
