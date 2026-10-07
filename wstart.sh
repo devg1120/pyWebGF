@@ -17,5 +17,6 @@
 #python  ./app27_yyyymm.py
 #python  ./app28_yyyymm.py  # dush
 #python  ./app29_yyyymm.py  # dush im
-python  ./app30_yyyymm.py  #   new csv
+python  ./app30_yyyymm.py  #   new csv   +   natsorted
+
 

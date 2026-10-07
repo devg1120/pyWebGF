@@ -14,6 +14,8 @@ from matplotlib.figure import Figure
 import matplotlib.dates as mdates
 from flask import Flask, render_template, request, send_file
 
+from natsort import natsorted
+
 # --- OS自動判定による日本語文字化け対策 ---
 current_os = platform.system()
 
@@ -81,7 +83,8 @@ def index():
     available_switches = sorted(
         [
             os.path.basename(d)
-            for d in glob.glob(os.path.join(date_dir, "SWITCH_*"))
+            #for d in glob.glob(os.path.join(date_dir, "SWITCH_*"))
+            for d in glob.glob(os.path.join(date_dir, "*"))
             if os.path.isdir(d)
         ]
     )
@@ -103,7 +106,8 @@ def index():
     if selected_switch:
         target_dir = os.path.join(BASE_DIR, selected_date, selected_switch)
         csv_files = sorted(glob.glob(os.path.join(target_dir, "*.csv")))
-        csv_filenames = [os.path.basename(f) for f in csv_files]
+        #csv_filenames = [os.path.basename(f) for f in csv_files]
+        csv_filenames = natsorted([os.path.basename(f) for f in csv_files])
 
     return render_template(
         "index29.html",
