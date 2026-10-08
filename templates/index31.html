@@ -320,9 +320,16 @@
                     <h4>📋 グラフ目次</h4>
                     <ul class="toc-list" id="toc-list">
                         {% for filename in csv_filenames %}
+                                {% set ns = namespace() %}
+
+                                {% set ns.interface = filename | replace('.csv','')  %}
+				{% set ns.desc = "" %}
+				{% if ns.interface in info_dic %}
+				    {% set ns.desc = info_dic[ns.interface].desc %}
+                                {% endif %}
                     <!-- 検索連動のために data-filename 属性と一意のIDリンクを付与 -->
                             <li class="toc-item" data-filename="{{ filename | lower }}" id="toc-item-{{ loop.index }}">
-                                <a href="#graph-anchor-{{ loop.index }}" class="toc-link" title="{{ filename }}">{{ filename }}</a>
+				    <a href="#graph-anchor-{{ loop.index }}" class="toc-link" title="{{ filename }}">{{ ns.interface + "       " +  ns.desc}}</a>
                             </li>
                         {% endfor %}
                     </ul>
