@@ -144,6 +144,7 @@ def plot_graph():
     cols = int(request.args.get("cols", 2))
     start_hour = int(request.args.get("start_hour", 8))
     end_hour = int(request.args.get("end_hour", 18))
+    desc = request.args.get("desc")
 
     file_path = os.path.join(BASE_DIR, yyyymm, dd, switch, filename)
 
@@ -244,12 +245,20 @@ def plot_graph():
             )
             ax.set_ylabel("転送速度 (bps)", color="#000000")
 
+        interface = filename.replace(".csv","")
         ax.set_title(
-            f"【{switch}】{filename}",
+            f"{switch}: {interface}",
             color="#000000",
             fontsize=11,
             fontweight="bold",
             loc="left",
+        )
+        ax.set_title(
+            f"{desc}",
+            color="#000000",
+            fontsize=11,
+            fontweight="bold",
+            loc="right",
         )
         ax.set_xlabel(f"{yyyymm}/{dd}", color="#000000")
         ax.legend(
