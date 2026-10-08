@@ -335,7 +335,7 @@
                     <div class="graph-grid" id="graph-grid">
 <!-- 各グラフのループ出力部分 -->
                         {% for filename in csv_filenames %}
-                            <div class="graph-card" style="position: relative; display: inline-block; border: 1px solid #ccc; padding: 10px; margin: 5px; background: #f9f9f9; vertical-align: top;">
+                            <div class="graph-card" id="graph-anchor-{{ loop.index }}" data-filename="{{ filename | lower }}" style="position: relative; display: inline-block; border: 1px solid #ccc; padding: 10px; margin: 5px; background: #f9f9f9; vertical-align: top;">
 <!--
 <div style="background: #fff3cd; color: #856404; padding: 10px; font-size: 0.8em; margin-bottom: 10px;">
     <strong>[現在の画面の状態]</strong><br>
@@ -479,7 +479,7 @@
 
                             try {
                                 const regex = new RegExp(regexPattern);
-
+/*
                             // グラフカードと目次アイテムを同時にループしてフィルタリング
                                 for (let i = 0; i < totalCount; i++) {
                                     const card = graphCards[i];
@@ -488,13 +488,34 @@
 
                                     if (regex.test(filename)) {
                                         card.style.display = 'flex';
-                                        if (tocItem) tocItem.style.display = 'block'; // マッチした目次を表示
+	  			        if (tocItem) { console.log(tocItem);tocItem.style.display = 'block';} // マッチした目次を表示
                                         visibleCount++;
                                     } else {
                                         card.style.display = 'none';
                                         if (tocItem) tocItem.style.display = 'none'; // マッチしない目次を非表示
                                     }
                                 }
+*/
+            // 1. グラフ本体の絞り込み
+            graphCards.forEach(item => {
+                const filename = item.getAttribute('data-filename') || "";
+                if (regex.test(filename)) {
+                    item.style.display = ''; 
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none'; 
+                }
+            });
+
+            // 2. サイドバー目次の絞り込み (追従処理)
+            tocItems.forEach(item => {
+                const filename = item.getAttribute('data-filename') || "";
+                if (regex.test(filename)) {
+                    item.style.display = ''; // マッチしたら目次を表示
+                } else {
+                    item.style.display = 'none'; // マッチしなければ目次を非表示
+                }
+            });
                             } catch (err) {
                                 console.error("Invalid regex filter pattern", err);
                             }

@@ -13,10 +13,10 @@
 #python  ./app23_yyyymm.py
 #python  ./app24_yyyymm.py
 #python  ./app25_yyyymm.py
-#python  ./app26_yyyymm.py  # no dush
+#python  ./app26_yyyymm.py  # no dush    絞込OK
 #python  ./app27_yyyymm.py
 #python  ./app28_yyyymm.py  # dush
-#python  ./app29_yyyymm.py  # dush im
-python  ./app30_yyyymm.py  #   new csv   +   natsorted
+#python  ./app29_yyyymm.py  # dush im   絞り込みNG
+python  ./app30_yyyymm.py  #   new csv   +   natsorted   絞り込みOK
 
 
