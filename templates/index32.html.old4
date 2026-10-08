@@ -180,22 +180,6 @@
                         <div class="graph-header">
                             <span style="font-weight: bold; font-size: 0.9em;"># {{ ns.interface }} {% if ns.desc %}<span style="color: #555; font-weight: normal; margin-left: 5px;">({{ ns.desc }})</span>{% endif %}</span>
                             
-<!-- 💡 onsubmitを追加して、JavaScriptで非同期送信にインターセプト（横取り）します -->
-<form method="POST" action="/dashboard/add" style="margin: 0;" onsubmit="registerDashboard(event, this)">
-    <input type="hidden" name="yyyymm" value="{{ selected_yyyymm }}">
-    <input type="hidden" name="dd" value="{{ selected_dd }}">
-    <input type="hidden" name="switch" value="{{ selected_switch }}">
-    <input type="hidden" name="filename" value="{{ filename }}">
-    <input type="hidden" name="desc" value="{{ ns.desc }}">
-    
-    {% if ns.is_registered %}
-    <button type="button" class="btn-reg" style="background-color: #0080ff; color: #ffffff; border: 1px solid #0080ff;" disabled>登録中</button>
-    {% else %}
-    <button type="submit" class="btn-reg btn-reg-submit" style="background-color: #e1f5fe; border: 1px solid #b3e5fc; color: #0288d1;">＋ ダッシュボード登録</button>
-    {% endif %}
-</form>
-
-<!--
                             <form method="POST" action="/dashboard/add" style="margin: 0;">
                                 <input type="hidden" name="yyyymm" value="{{ selected_yyyymm }}">
                                 <input type="hidden" name="dd" value="{{ selected_dd }}">
@@ -209,7 +193,6 @@
                                 <button type="submit" class="btn-reg" style="background-color: #e1f5fe; border: 1px solid #b3e5fc; color: #0288d1;">＋ ダッシュボード登録</button>
                                 {% endif %}
                             </form>
--->
                         </div>
  <!--                       
                         <img class="graph-img" 
@@ -300,42 +283,6 @@
         });
     </script>
 
-    <script>
-        // 💡 【新設】ページをリロードさせずに裏でダッシュボード登録を行う関数
-        function registerDashboard(event, formElement) {
-            // 1. 通常のフォーム送信（ページリロード）を絶対にキャンセルする
-            event.preventDefault();
-
-            // 2. フォーム内のデータをJavaScriptで収集
-            const formData = new FormData(formElement);
-
-            // 3. fetch APIを使って、裏でこっそりサーバーの「/dashboard/add」を叩く
-            fetch(formElement.action, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                if (response.ok) {
-                    // 4. サーバー側の登録が成功したら、押されたボタンの見た目を「登録中」に書き換える
-                    const submitBtn = formElement.querySelector('.btn-reg-submit');
-                    if (submitBtn) {
-                        submitBtn.type = 'button';
-                        submitBtn.disabled = true;
-                        submitBtn.style.backgroundColor = '#ccc';
-                        submitBtn.style.borderColor = '#aaa';
-                        submitBtn.style.color = '#333';
-                        submitBtn.textContent = '登録中';
-                    }
-                } else {
-                    alert('ダッシュボードへの登録に失敗しました。');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('通信エラーが発生しました。');
-            });
-        }
-    </script>
 
 </body>
 </html>

@@ -292,7 +292,62 @@ def plot_graph():
 
     return send_file(img, mimetype="image/png")
 
+@app.route('/dashboard')
+def dashboard():
+    # 1. メインと同様に2階層（YYYYMM / DD）の構造を辞書型で取得
+    date_tree = {}
+    yyyymm_dirs = sorted([d for d in glob.glob(os.path.join(BASE_DIR, "*")) if os.path.isdir(d)])
+    
+    for yyyymm_dir in yyyymm_dirs:
+        yyyymm_name = os.path.basename(yyyymm_dir)
+        dd_dirs = sorted([d for d in glob.glob(os.path.join(yyyymm_dir, "*")) if os.path.isdir(d)])
+        dd_list = [os.path.basename(d) for d in dd_dirs]
+        if dd_list:
+            date_tree[yyyymm_name] = dd_list
 
+    available_yyyymm = list(date_tree.keys())
+
+    # 💡 【追加】現在の表示モードを取得（デフォルトは通常モード "single"）
+    current_mode = request.args.get("mode", "single")
+
+    # 選択された日付の取得とフォールバック
+    selected_yyyymm = request.args.get('yyyymm', "")
+    if not selected_yyyymm or selected_yyyymm not in date_tree:
+        selected_yyyymm = available_yyyymm[0] if available_yyyymm else ""
+        
+    available_dds = date_tree.get(selected_yyyymm, [])
+    selected_dd = request.args.get('dd', "")
+    if not selected_dd or selected_dd not in available_dds:
+        selected_dd = available_dds[0] if available_dds else ""
+
+    # 💡 【追加】期間指定用の開始日・終了日パラメータの取得
+    selected_start_dd = request.args.get("start_dd", "")
+    selected_end_dd = request.args.get("end_dd", "")
+
+    try:
+        selected_cols = int(request.args.get('cols', 2))
+    except ValueError:
+        selected_cols = 2
+
+    start_hour = int(request.args.get('start_hour', 8))
+    end_hour = int(request.args.get('end_hour', 18))
+
+    return render_template(
+        'dashboard32.html',
+        registry=DASHBOARD_REGISTRY,
+        date_tree=date_tree,
+        current_mode=current_mode,            # 💡 追加：現在の表示モード
+        selected_start_dd=selected_start_dd,  # 💡 追加：開始日
+        selected_end_dd=selected_end_dd,      # 💡 追加：終了日
+        selected_yyyymm=selected_yyyymm,
+        selected_dd=selected_dd,
+        available_dds=available_dds,
+        selected_cols=selected_cols,
+        start_hour=start_hour,
+        end_hour=end_hour,
+    )
+
+"""
 @app.route('/dashboard')
 def dashboard():
     date_tree = {}
@@ -335,7 +390,7 @@ def dashboard():
         start_hour=start_hour,
         end_hour=end_hour,
     )
-
+"""
 
 @app.route("/dashboard/add", methods=["POST"])
 def dashboard_add():
