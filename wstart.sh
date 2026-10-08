@@ -17,6 +17,7 @@
 #python  ./app27_yyyymm.py
 #python  ./app28_yyyymm.py  # dush
 #python  ./app29_yyyymm.py  # dush im   絞り込みNG
-python  ./app30_yyyymm.py  #   new csv   +   natsorted   絞り込みOK
+#python  ./app30_yyyymm.py  #   new csv   +   natsorted   絞り込みOK
+python  ./app31_yyyymm.py  #  description
 
 
