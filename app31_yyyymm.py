@@ -144,7 +144,7 @@ def plot_graph():
     cols = int(request.args.get("cols", 2))
     start_hour = int(request.args.get("start_hour", 8))
     end_hour = int(request.args.get("end_hour", 18))
-    desc = request.args.get("desc")
+    desc = request.args.get("desc", "")
 
     file_path = os.path.join(BASE_DIR, yyyymm, dd, switch, filename)
 

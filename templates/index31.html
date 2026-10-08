@@ -353,6 +353,10 @@
                                 {% set ns = namespace(is_registered=false) %}
 
                                 {% set ns.interface = filename | replace('.csv','')  %}
+				{% set ns.desc = "" %}
+				{% if ns.interface in info_dic %}
+				    {% set ns.desc = info_dic[ns.interface].desc %}
+                                {% endif %}
 
                                 {% for item in registry %}
                                     {% if item.yyyymm == selected_yyyymm and item.dd == selected_dd and item.switch == selected_switch and item.filename == filename %}
@@ -390,7 +394,7 @@
 -->
                                     <div class="loading-shimmer"
                                          data-filename="{{ filename }}"
-                                         data-url="/plot?yyyymm={{ selected_yyyymm }}&dd={{ selected_dd }}&switch={{ selected_switch }}&filename={{ filename }}&cols={{ selected_cols }}&start_hour={{ start_hour }}&end_hour={{ end_hour }}&desc={{ info_dic[ns.interface].desc }}">
+                                         data-url="/plot?yyyymm={{ selected_yyyymm }}&dd={{ selected_dd }}&switch={{ selected_switch }}&filename={{ filename }}&cols={{ selected_cols }}&start_hour={{ start_hour }}&end_hour={{ end_hour }}&desc={{ ns.desc  }}">
                                         読み込み中...
                                     </div>
 
