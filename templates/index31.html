@@ -380,6 +380,7 @@
                                                 data-dd="{{ selected_dd }}"
                                                 data-switch="{{ selected_switch }}"
                                                 data-filename="{{ filename }}"
+                                                data-desc="{{ ns.desc }}"
                                                 style="background-color: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: all 0.2s;">
                                             ＋ ダッシュボード登録
                                         </button>
@@ -546,6 +547,7 @@
                         const dd = this.getAttribute('data-dd');
                         const switchName = this.getAttribute('data-switch');
                         const filename = this.getAttribute('data-filename');
+                        const desc = this.getAttribute('data-desc');
 
             // サーバーに送信するデータを作成
                         const formData = new FormData();
@@ -553,6 +555,7 @@
                         formData.append('dd', dd);
                         formData.append('switch', switchName);
                         formData.append('filename', filename);
+                        formData.append('desc', desc);
 
             // Fetch APIを使ってバックグラウンドで非同期送信
                         fetch('/dashboard/add', {

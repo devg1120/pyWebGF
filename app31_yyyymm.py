@@ -327,7 +327,8 @@ def dashboard():
     end_hour = int(request.args.get('end_hour', 18))
 
     return render_template(
-        'dashboard29.html',
+        #'dashboard29.html',
+        'dashboard31.html',
         registry=DASHBOARD_REGISTRY,
         date_tree=date_tree,
         selected_yyyymm=selected_yyyymm,
@@ -335,7 +336,7 @@ def dashboard():
         available_dds=available_dds,
         selected_cols=selected_cols,
         start_hour=start_hour,
-        end_hour=end_hour
+        end_hour=end_hour,
     )
 
 """
@@ -375,20 +376,23 @@ def dashboard_add():
     dd = request.form.get("dd")
     switch = request.form.get("switch")
     filename = request.form.get("filename")
+    desc = request.form.get("desc")
+    print(filename, desc)
 
     redirect_args = f"?yyyymm={yyyymm}&dd={dd}&switch={switch}"
 
-    if yyyymm and dd and switch and filename:
+    if yyyymm and dd and switch and filename :
         exists = any(
             item["yyyymm"] == yyyymm
             and item["dd"] == dd
             and item["switch"] == switch
             and item["filename"] == filename
+            and item["desc"] == desc
             for item in DASHBOARD_REGISTRY
         )
         if not exists:
             DASHBOARD_REGISTRY.append(
-                {"yyyymm": yyyymm, "dd": dd, "switch": switch, "filename": filename}
+                    {"yyyymm": yyyymm, "dd": dd, "switch": switch, "filename": filename, "desc" : desc}
             )
 
     from flask import redirect, url_for
