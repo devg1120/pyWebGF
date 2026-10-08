@@ -202,7 +202,8 @@ def plot_graph():
                 
             start_time = base_date + pd.Timedelta(hours=start_hour)
             end_time = base_date + pd.Timedelta(hours=end_hour, minutes=55)
-            x_label_text = f"{yyyymm}/{dd}"
+            #x_label_text = f"{yyyymm}/{dd}"
+            x_label_text = f"{yyyymm[0:4]}-{yyyymm[4:6]}-{dd}"
             x_tick_format = "%H:%M"
 
         # ─── 🛠️ 共通データ整形処理 ───
@@ -274,8 +275,10 @@ def plot_graph():
         interface = filename.replace(".csv", "")
         ax.set_title(f"{switch}: {interface}", color="#000000", fontsize=11, fontweight="bold", loc="left")
         ax.set_title(f"{desc}", color="#000000", fontsize=11, fontweight="bold", loc="right")
-        ax.set_xlabel(x_label_text, color="#000000")
-        ax.legend(loc="upper left", ncol=2, frameon=True, facecolor="#ffffff", edgecolor="#cccccc")
+        ax.set_xlabel(x_label_text, color="#000000",labelpad=5)
+        #ax.legend(loc="upper left", ncol=2, frameon=True, facecolor="#ffffff", edgecolor="#cccccc")
+        #ax.legend(bbox_to_anchor=(-0.02, -0.3), loc="upper left", ncol=2, frameon=True, facecolor="#ffffff", edgecolor="#cccccc")
+        #ax.legend(bbox_to_anchor=(-0.02, -0.15), loc="upper left", borderaxespad=0, ncol=2, frameon=True, facecolor="#ffffff", edgecolor="#cccccc")
 
     except Exception as e:
         print("====== グラフ描画エラー詳細 ======")
@@ -284,6 +287,8 @@ def plot_graph():
         ax.text(0.5, 0.5, f"エラーが発生しました:\n{type(e).__name__}\n{str(e)}", ha="center", va="center", color="red", fontsize=9)
         ax.set_title(f"{filename} (読込失敗)")
 
+    fig.legend(bbox_to_anchor=(0.13, -0.04), loc='lower left', borderaxespad=0, fontsize=10,  ncol=2, frameon=True, facecolor="#ffffff", edgecolor="#cccccc")
+    plt.subplots_adjust(bottom=0.25)
     fig.tight_layout()
     img = io.BytesIO()
     fig.savefig(img, format="png", bbox_inches="tight", dpi=120)
