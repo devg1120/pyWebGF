@@ -130,8 +130,6 @@
         </div>
         {% endif %}
     </div>
-
-
     <div class="container">
         {% if registry %}
         <!-- 💡 左サイド：登録済みグラフの目次エリア -->
@@ -140,8 +138,7 @@
             <ul id="sidebar-menu" style="font-size: 0.85em; line-height: 1.6; padding-left: 15px; margin: 0; list-style-type: square;">
             {% for item in registry %}
                 {% set ns_if = item.filename | replace('.csv','') %}
-                <!-- 💡 id="dash-menu-{{ loop.index0 }}" を追加 -->
-                <li class="menu-item" id="dash-menu-{{ loop.index0 }}" data-search="{{ (item.switch ~ ' ' ~ ns_if ~ ' ' ~ item.desc) | lower }}">
+                <li class="menu-item" data-search="{{ (item.switch ~ ' ' ~ ns_if ~ ' ' ~ item.desc) | lower }}">
                     <a href="#dash-{{ loop.index0 }}" style="color: #0066cc; text-decoration: none;">
                         <small>[{{ item.switch }}]</small> {{ ns_if }} 
                         <span style="color: #666; font-size: 0.9em;">{{ item.desc }}</span>
@@ -159,21 +156,22 @@
                 {% for item in registry %}
                     {% set ns_if = item.filename | replace('.csv','') %}
                     
-                    <!-- 💡 idを dash-card-{{ loop.index0 }} に変更 -->
-                    <div class="graph-card" id="dash-card-{{ loop.index0 }}" data-search="{{ (item.switch ~ ' ' ~ ns_if ~ ' ' ~ item.desc) | lower }}">
+                    <!-- data-search 属性にあらかじめ小文字化した識別子を詰め込む -->
+                    <div class="graph-card" id="dash-{{ loop.index0 }}" data-search="{{ (item.switch ~ ' ' ~ ns_if ~ ' ' ~ item.desc) | lower }}">
                         <div class="graph-header">
                             <span style="font-weight: bold; font-size: 0.9em;">
                                 <span style="color: #0288d1;">[{{ item.switch }}]</span> # {{ ns_if }} 
                                 {% if item.desc %}<span style="color: #555; font-weight: normal; margin-left: 5px;">({{ item.desc }})</span>{% endif %}
                             </span>
                             
-                            <!-- 💡 onsubmit を変更して JavaScript の非同期削除関数を呼び出す -->
-                            <form method="POST" action="/dashboard/delete" style="margin: 0;" onsubmit="deleteDashboard(event, this, {{ loop.index0 }})">
+                            <!-- ダッシュボードからの削除用フォーム -->
+                            <form method="POST" action="/dashboard/delete" style="margin: 0;" onsubmit="return confirm('このグラフをダッシュボードから削除しますか？');">
                                 <input type="hidden" name="index" value="{{ loop.index0 }}">
                                 <button type="submit" class="btn-del">× 削除</button>
                             </form>
                         </div>
                         
+                        <!-- 💡 メインモニター側と統一したガタつき防止（アスペクト比固定型）のオンデマンド画像生成 -->
                         <img class="graph-img" 
                              src="/plot?mode={{ current_mode }}&yyyymm={% if current_mode == 'single' %}{{ selected_yyyymm }}{% else %}{{ item.yyyymm }}{% endif %}&dd={% if current_mode == 'single' %}{{ selected_dd }}{% else %}{{ item.dd }}{% endif %}&start_dd={{ selected_start_dd }}&end_dd={{ selected_end_dd }}&switch={{ item.switch }}&filename={{ item.filename }}&cols={{ selected_cols }}&start_hour={{ start_hour }}&end_hour={{ end_hour }}&desc={{ item.desc }}" 
                              alt="グラフ読み込み中..." 
@@ -184,7 +182,6 @@
                     </div>
                 {% endfor %}
             </div>
-
             {% else %}
             <div style="padding: 25px; background-color: #f9f9f9; border: 1px solid #ddd; color: #555; border-radius: 4px; text-align: center;">
                 <h4>📌 ダッシュボードにはまだ何も登録されていません。</h4>
@@ -252,84 +249,6 @@
                 }
             });
         });
-    </script>
-    <script>
-        // 💡 【新設】ページをリロードさせずに裏でダッシュボード削除を行う関数
-        function deleteDashboard(event, formElement, index) {
-            // 1. 通常のフォーム送信（ページリロード）をキャンセル
-            event.preventDefault();
-
-            // 2. ユーザー確認
-            if (!confirm('このグラフをダッシュボードから削除しますか？')) {
-                return;
-            }
-
-            // 3. フォーム内のデータを収集
-            const formData = new FormData(formElement);
-
-            // 4. fetch APIを使って、裏でサーバーの「/dashboard/delete」を叩く
-            fetch(formElement.action, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                if (response.ok) {
-                    // 5. サーバー側の削除が成功したら、対象のグラフカードとサイドバーの目次をふわっと消す
-                    const targetCard = document.getElementById(`dash-card-${index}`);
-                    const targetMenu = document.getElementById(`dash-menu-${index}`);
-                    
-                    if (targetCard) {
-                        targetCard.style.transition = 'all 0.3s ease';
-                        targetCard.style.opacity = '0';
-                        targetCard.style.transform = 'scale(0.9)';
-                        setTimeout(() => {
-                            targetCard.remove();
-                            // 残り件数を再計算してステータスを更新
-                            updateFilterStatus();
-                        }, 300);
-                    }
-                    
-                    if (targetMenu) {
-                        targetMenu.remove();
-                    }
-                } else {
-                    alert('ダッシュボードからの削除に失敗しました。');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('通信エラーが発生しました。');
-            });
-        }
-
-        // 💡 表示件数のカウンターを更新する補助関数
-        function updateFilterStatus() {
-            const filterInput = document.getElementById('filter-input');
-            const graphCards = document.querySelectorAll('.graph-card');
-            const filterStatus = document.getElementById('filter-status');
-            if (!filterStatus) return;
-
-            let visibleCount = 0;
-            graphCards.forEach(card => {
-                if (card.style.display !== 'none') visibleCount++;
-            });
-            filterStatus.textContent = `表示中: ${visibleCount} / ${graphCards.length} 件`;
-
-            // 万が一すべて削除されて空になったらメッセージを表示
-            if (graphCards.length === 0) {
-                const mainContent = document.querySelector('.main-content');
-                const sidebar = document.querySelector('.sidebar');
-                if (sidebar) sidebar.remove();
-                if (mainContent) {
-                    mainContent.innerHTML = `
-                        <div style="padding: 25px; background-color: #f9f9f9; border: 1px solid #ddd; color: #555; border-radius: 4px; text-align: center;">
-                            <h4>📌 ダッシュボードにはまだ何も登録されていません。</h4>
-                        </div>`;
-                }
-                const filterArea = document.getElementById('filter-input')?.closest('div[style*="background-color: #eef"]');
-                if (filterArea) filterArea.remove();
-            }
-        }
     </script>
 
 </body>
